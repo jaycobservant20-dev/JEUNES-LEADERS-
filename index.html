@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeunes Leaders - Mon bloc-notes</title>
+    
+    <!-- SDK Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-light: #64748b;
+            --border-color: #e2e8f0;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.3rem;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        main {
+            flex: 1;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            margin-bottom: 1.2rem;
+            color: var(--primary);
+            font-size: 1.4rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-group input {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.secondary {
+            background-color: #64748b;
+        }
+        button.secondary:hover {
+            background-color: #475569;
+        }
+
+        button.danger {
+            background-color: var(--danger);
+        }
+        button.danger:hover {
+            background-color: #dc2626;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-btn {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .dashboard-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.1);
+        }
+
+        .dashboard-btn h3 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-btn p {
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .list-item {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .list-item-content h4 {
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .list-item-content p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.2rem;
+        }
+
+        .note-area {
+            width: 100%;
+            height: 300px;
+            resize: vertical;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .note-status {
+            font-size: 0.85rem;
+            color: var(--success);
+            margin-top: 0.5rem;
+            font-weight: 600;
+        }
+
+        .user-info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .team-badge {
+            background: #e0e7ff;
+            color: var(--primary);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .selection-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .selection-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: var(--bg-color);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Jeunes Leaders</h1>
+        <p>Mon bloc-notes collaboratif et outils de suivi</p>
+    </header>
+
+    <main>
+        <!-- SECTION AUTHENTIFICATION -->
+        <section id="auth-section" class="card">
+            <div id="auth-tabs" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <button id="tab-login-btn" type="button" onclick="switchAuthMode('login')">Se connecter</button>
+                <button id="tab-register-btn" class="secondary" type="button" onclick="switchAuthMode('register')">Créer un compte</button>
+            </div>
+
+            <!-- Formulaire de Connexion -->
+            <div id="login-form">
+                <h2>Connexion</h2>
+                <div class="form-group">
+                    <label>Nom d'utilisateur</label>
+                    <input type="text" id="login-username" placeholder="Entrez votre nom d'utilisateur">
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" id="login-password" placeholder="Entrez votre mot de passe">
+                </div>
+                <button type="button" onclick="handleLogin()">Se connecter</button>
+            </div>
+
+            <!-- Formulaire d'Inscription -->
+            <div id="register-form" class="hidden">
+                <h2>Créer un compte</h2>
+                <div class="form-group">
+                    <label>Nom d'utilisateur</label>
+                    <input type="text" id="reg-username" placeholder="Choisissez un nom d'utilisateur">
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" id="reg-password" placeholder="Choisissez un mot de passe">
+                </div>
+                <div class="form-group">
+                    <label>Rôles (cochez un ou plusieurs)</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="reg-role-mediateur" value="mediateur" checked>
+                        <label for="reg-role-mediateur" style="margin-bottom:0;">Médiateur</label>
+                    </div>
+                    <div class="checkbox-group" style="margin-top: 0.3rem;">
+                        <input type="checkbox" id="reg-role-ambulancier" value="ambulancier">
+                        <label for="reg-role-ambulancier" style="margin-bottom:0;">Ambulancier</label>
+                    </div>
+                </div>
+                <button type="button" onclick="handleRegister()">Créer mon compte</button>
+            </div>
+        </section>
+
+        <!-- SECTION TABLEAU DE BORD -->
+        <section id="dashboard-section" class="card hidden">
+            <div class="user-info-bar">
+                <div>
+                    <strong id="display-user-name" style="font-size: 1.1rem;">Nom</strong>
+                    <span id="display-user-role" class="team-badge" style="margin-left: 10px;">Rôle</span>
+                </div>
+                <button class="secondary" type="button" onclick="handleLogout()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Se déconnecter</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-btn" onclick="openView('horaire')">
+                    <h3>📅 Horaire</h3>
+                    <p>Entrer les récréations AM/PM et dates</p>
+                </div>
+                <div class="dashboard-btn" onclick="openView('surveiller')">
+                    <h3>👁️ Personne à surveiller</h3>
+                    <p>Suivi des comportements et avertissements</p>
+                </div>
+                <div class="dashboard-btn" onclick="openView('equipe')">
+                    <h3>👥 Équipe</h3>
+                    <p>Membres de votre équipe</p>
+                </div>
+                <div class="dashboard-btn" onclick="openView('notes')">
+                    <h3>📝 Notes personnelles</h3>
+                    <p>Bloc-notes avec sauvegarde automatique</p>
+                </div>
+                <div id="ambulancier-btn-view" class="dashboard-btn hidden" onclick="openView('blesses')">
+                    <h3>🚑 Personnes blessées</h3>
+                    <p>Suivi des blessures et des traitements</p>
+                </div>
+                <div class="dashboard-btn" onclick="openView('parametres')">
+                    <h3>⚙️ Paramètres</h3>
+                    <p>Mon compte et créer un compte ami</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VUES SECONDAIRES -->
+        <section id="view-container" class="card hidden">
+            <button class="secondary" type="button" onclick="backToDashboard()" style="margin-bottom: 1.5rem;">← Retour au menu</button>
+            <div id="view-content"></div>
+        </section>
+    </main>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-example-key-jeunes-leaders",
+            authDomain: "jeunes-leaders-blocnote.firebaseapp.com",
+            projectId: "jeunes-leaders-blocnote",
+            storageBucket: "jeunes-leaders-blocnote.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        let currentUser = JSON.parse(sessionStorage.getItem('jl_currentUser')) || null;
+        let allUsers = [];
+        let sharedData = {
+            horaires: [],
+            surveiller: [],
+            blesses: [],
+            equipeMembres: []
+        };
+
+        // Gestionnaire d'affichage des onglets d'authentification (garanti sans erreur de portée)
+        function switchAuthMode(mode) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const tabLoginBtn = document.getElementById('tab-login-btn');
+            const tabRegisterBtn = document.getElementById('tab-register-btn');
+
+            if (!loginForm || !registerForm) return;
+
+            if (mode === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabLoginBtn.classList.remove('secondary');
+                tabRegisterBtn.classList.add('secondary');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabLoginBtn.classList.add('secondary');
+                tabRegisterBtn.classList.remove('secondary');
+            }
+        }
+
+        window.onload = function() {
+            initFirebaseListeners();
+            if (currentUser) {
+                showDashboard();
+            }
+        };
+
+        function initFirebaseListeners() {
+            // Écoute en temps réel des utilisateurs
+            db.collection("users").onSnapshot((snapshot) => {
+                allUsers = [];
+                snapshot.forEach((doc) => {
+                    allUsers.push(doc.data());
+                });
+            }, (error) => {
+                console.error("Erreur de chargement des utilisateurs :", error);
+            });
+
+            // Écoute en temps réel des données partagées
+            db.collection("sharedData").doc("mainDocument").onSnapshot((doc) => {
+                if (doc.exists) {
+                    sharedData = doc.data();
+                } else {
+                    db.collection("sharedData").doc("mainDocument").set(sharedData);
+                }
+            }, (error) => {
+                console.error("Erreur de chargement des données partagées :", error);
+            });
+        }
+
+        function getSelectedRoles(prefix) {
+            let roles = [];
+            const med = document.getElementById(prefix + '-role-mediateur');
+            const amb = document.getElementById(prefix + '-role-ambulancier');
+            if (med && med.checked) roles.push('Médiateur');
+            if (amb && amb.checked) roles.push('Ambulancier');
+            return roles.length > 0 ? roles.join(' & ') : 'Médiateur';
+        }
+
+        async function handleRegister() {
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+            const role = getSelectedRoles('reg');
+
+            if (!username || !password) {
+                alert("Veuillez remplir tous les champs.");
+                return;
+            }
+
+            if (allUsers.some(u => u.username === username)) {
+                alert("Ce nom d'utilisateur existe déjà.");
+                return;
+            }
+
+            try {
+                const newUser = { username, password, role };
+                await db.collection("users").doc(username).set(newUser);
+                alert("Compte créé avec succès ! Tu peux maintenant te connecter.");
+                switchAuthMode('login');
+            } catch (error) {
+                console.error("Erreur d'inscription :", error);
+                alert("Erreur lors de la création du compte.");
+            }
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            const found = allUsers.find(u => u.username === username && u.password === password);
+            if (!found) {
+                alert("Nom d'utilisateur ou mot de passe incorrect.");
+                return;
+            }
+
+            currentUser = found;
+            sessionStorage.setItem('jl_currentUser', JSON.stringify(currentUser));
+            showDashboard();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            sessionStorage.removeItem('jl_currentUser');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('view-container').classList.add('hidden');
+            document.getElementById('auth-section').classList.remove('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            document.getElementById('display-user-name').innerText = currentUser.username;
+            document.getElementById('display-user-role').innerText = currentUser.role;
+
+            if (currentUser.role.toLowerCase().includes('ambulancier')) {
+                document.getElementById('ambulancier-btn-view').classList.remove('hidden');
+            } else {
+                document.getElementById('ambulancier-btn-view').classList.add('hidden');
+            }
+        }
+
+        function backToDashboard() {
+            document.getElementById('view-container').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+        }
+
+        function openView(viewName) {
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('view-container').classList.remove('hidden');
+            const container = document.getElementById('view-content');
+            container.innerHTML = '';
+
+            if (viewName === 'horaire') renderHoraireView(container);
+            else if (viewName === 'surveiller') renderSurveillerView(container);
+            else if (viewName === 'equipe') renderEquipeView(container);
+            else if (viewName === 'notes') renderNotesView(container);
+            else if (viewName === 'blesses') renderBlessesView(container);
+            else if (viewName === 'parametres') renderParametresView(container);
+        }
+
+        // --- VUE HORAIRE ---
+        function renderHoraireView(container) {
+            container.innerHTML = `
+                <h2>📅 Gestion des Horaires et Récréations</h2>
+                <div class="form-group">
+                    <label>Date / Jour de la semaine (ex: Mardi 20 juillet)</label>
+                    <input type="text" id="horaire-date" placeholder="Ex: Mardi le 20 juillet">
+                </div>
+                <div class="form-group">
+                    <label>Période de surveillance</label>
+                    <select id="horaire-periode">
+                        <option value="Récréation AM">Récréation AM</option>
+                        <option value="Récréation PM">Récréation PM</option>
+                    </select>
+                </div>
+                <button type="button" onclick="addHoraire()">+ Ajouter une date / horaire</button>
+                <div style="margin-top: 2rem;" id="horaires-list"></div>
+            `;
+            updateHorairesList();
+        }
+
+        async function addHoraire() {
+            const date = document.getElementById('horaire-date').value.trim();
+            const periode = document.getElementById('horaire-periode').value;
+            if (!date) {
+                alert("Veuillez entrer une date ou un jour.");
+                return;
+            }
+            try {
+                const docRef = db.collection("sharedData").doc("mainDocument");
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    let data = doc.exists ? doc.data() : { horaires: [], surveiller: [], blesses: [], equipeMembres: [] };
+                    if (!data.horaires) data.horaires = [];
+                    data.horaires.push({ date, periode, author: currentUser.username });
+                    transaction.set(docRef, data);
+                });
+                document.getElementById('horaire-date').value = '';
+            } catch (e) {
+                console.error("Erreur lors de l'ajout de l'horaire :", e);
+            }
+        }
+
+        function updateHorairesList() {
+            const listEl = document.getElementById('horaires-list');
+            if (!listEl) return;
+            if (!sharedData.horaires || sharedData.horaires.length === 0) {
+                listEl.innerHTML = '<p>Aucun horaire enregistré.</p>';
+                return;
+            }
+            listEl.innerHTML = sharedData.horaires.map((h, index) => `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <h4>${h.date} - ${h.periode}</h4>
+                        <p>Ajouté par : ${h.author}</p>
+                    </div>
+                    <button class="danger" type="button" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteHoraire(${index})">Supprimer</button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteHoraire(index) {
+            try {
+                const docRef = db.collection("sharedData").doc("mainDocument");
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    if (doc.exists) {
+                        let data = doc.data();
+                        if (data.horaires && data.horaires[index]) {
+                            data.horaires.splice(index, 1);
+                            transaction.set(docRef, data);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Erreur lors de la suppression :", e);
+            }
+        }
+
+        // --- VUE SURVEILLANCE ---
+        function renderSurveillerView(container) {
+            container.innerHTML = `
+                <h2>👁️ Personnes à surveiller</h2>
+                <div class="form-group">
+                    <label>Prénom (Obligatoire)</label>
+                    <input type="text" id="surv-prenom" placeholder="Prénom de l'élève">
+                </div>
+                <div class="form-group">
+                    <label>Classe (Obligatoire)</label>
+                    <input type="text" id="surv-classe" placeholder="Ex: 4e année, Gr. 402">
+                </div>
+                <div class="form-group">
+                    <label>Le geste fait (Optionnel)</label>
+                    <input type="text" id="surv-geste" placeholder="Description du geste">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="surv-avertissement">
+                    <label for="surv-avertissement" style="margin-bottom:0;">Avertissement par un prof ?</label>
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Avec qui (Optionnel)</label>
+                    <input type="text" id="surv-avec" placeholder="Personnes impliquées">
+                </div>
+                <button type="button" onclick="addSurveiller()">+ Ajouter une personne</button>
+                <div style="margin-top: 2rem;" id="surveiller-list"></div>
+            `;
+            updateSurveillerList();
+        }
+
+        async function addSurveiller() {
+            const prenom = document.getElementById('surv-prenom').value.trim();
+            const classe = document.getElementById('surv-classe').value.trim();
+            const geste = document.getElementById('surv-geste').value.trim();
+            const avertissement = document.getElementById('surv-avertissement').checked ? 'Oui' : 'Non';
+            const avec = document.getElementById('surv-avec').value.trim();
+
+            if (!prenom || !classe) {
+                alert("Le prénom et la classe sont obligatoires.");
+                return;
+            }
+
+            try {
+                const docRef = db.collection("sharedData").doc("mainDocument");
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    let data = doc.exists ? doc.data() : { horaires: [], surveiller: [], blesses: [], equipeMembres: [] };
+                    if (!data.surveiller) data.surveiller = [];
+                    data.surveiller.push({ prenom, classe, geste, avertissement, avec, author: currentUser.username });
+                    transaction.set(docRef, data);
+                });
+                document.getElementById('surv-prenom').value = '';
+                document.getElementById('surv-classe').value = '';
+                document.getElementById('surv-geste').value = '';
+                document.getElementById('surv-avertissement').checked = false;
+                document.getElementById('surv-avec').value = '';
+            } catch (e) {
+                console.error("Erreur ajout surveillance :", e);
+            }
+        }
+
+        function updateSurveillerList() {
+            const listEl = document.getElementById('surveiller-list');
+            if (!listEl) return;
+            if (!sharedData.surveiller || sharedData.surveiller.length === 0) {
+                listEl.innerHTML = '<p>Aucune personne enregistrée.</p>';
+                return;
+            }
+            listEl.innerHTML = sharedData.surveiller.map((s, index) => `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <h4>${s.prenom} (${s.classe})</h4>
+                        ${s.geste ? `<p><strong>Geste :</strong> ${s.geste}</p>` : ''}
+                        <p><strong>Avertissement prof :</strong> ${s.avertissement}</p>
+                        ${s.avec ? `<p><strong>Avec :</strong> ${s.avec}</p>` : ''}
+                        <p style="font-size: 0.8rem; margin-top: 5px;">Ajouté par : ${s.author}</p>
+                    </div>
+                    <button class="danger" type="button" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteSurveiller(${index})">Supprimer</button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteSurveiller(index) {
+            try {
+                const docRef = db.collection("sharedData").doc("mainDocument");
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    if (doc.exists) {
+                        let data = doc.data();
+                        if (data.surveiller && data.surveiller[index]) {
+                            data.surveiller.splice(index, 1);
+                            transaction.set(docRef, data);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Erreur suppression surveillance :", e);
+            }
+        }
+
+        // --- VUE ÉQUIPE ---
+        function renderEquipeView(container) {
+            const availablePeers = allUsers.filter(u => u.username !== currentUser.username);
+
+            let checkboxesHtml = '';
+            if (availablePeers.length === 0) {
+                checkboxesHtml = '<p style="color: var(--text-light); font-style: italic;">Aucun autre jeune leader disponible pour le moment. Créez un compte ami dans les paramètres.</p>';
+            } else {
+                checkboxesHtml = availablePeers.map(peer => {
+                    const isChecked = sharedData.equipeMembres && sharedData.equipeMembres.includes(peer.username) ? 'checked' : '';
+                    return `
+                        <label class="selection-item">
+                            <input type="checkbox" class="peer-checkbox" value="${peer.username}" ${isChecked} onchange="limitTeamSelection(this)">
+                            <span><strong>${peer.username}</strong> (${peer.role})</span>
+                        </label>
+                    `;
+                }).join('');
+            }
+
+            container.innerHTML = `
+                <h2>👥 Équipe</h2>
+                <p style="margin-bottom: 1rem; color: var(--text-light);">Sélectionnez les membres de votre équipe (maximum 2 personnes) :</p>
+                <div class="selection-list" id="team-selection-container">
+                    ${checkboxesHtml}
+                </div>
+                <button type="button" onclick="saveTeamSelection()">Enregistrer l'équipe</button>
+                <div style="margin-top: 2rem;" id="equipe-list"></div>
+            `;
+            updateEquipeDisplay();
+        }
+
+        function limitTeamSelection(checkbox) {
+            const checkboxes = document.querySelectorAll('.peer-checkbox:checked');
+            if (checkboxes.length > 2) {
+                alert("Vous ne pouvez sélectionner que jusqu'à 2 personnes maximum.");
+                checkbox.checked = false;
+            }
+        }
+
+        async function saveTeamSelection() {
+            const checkboxes = document.querySelectorAll('.peer-checkbox:checked');
+            if (checkboxes.length > 2) {
+                alert("Maximum 2 personnes autorisées dans l'équipe.");
+                return;
+            }
+            try {
+                sharedData.equipeMembres = Array.from(checkboxes).map(cb => cb.value);
+                await db.collection("sharedData").doc("mainDocument").set(sharedData);
+                updateEquipeDisplay();
+                alert("Équipe mise à jour avec succès !");
+            } catch (e) {
+                console.error("Erreur sauvegarde équipe :", e);
+            }
+        }
+
+        function updateEquipeDisplay() {
+            const listEl = document.getElementById('equipe-list');
+            if (!listEl) return;
+            if (!sharedData.equipeMembres || sharedData.equipeMembres.length === 0) {
+                listEl.innerHTML = '<p>Aucun ajouté.</p>';
+                return;
+            }
+            listEl.innerHTML = `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <h4>Membres actuels de l'équipe :</h4>
+                        <p>${sharedData.equipeMembres.join(', ')}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- VUE NOTES PERSONNELLES ---
+        function renderNotesView(container) {
+            db.collection("notes").doc(currentUser.username).get().then((doc) => {
+                const savedNote = doc.exists ? doc.data().content : '';
+                container.innerHTML = `
+                    <h2>📝 Notes personnelles</h2>
+                    <textarea class="note-area" id="personal-note" placeholder="Écris tes notes ici... (sauvegarde automatique sur Firebase)" oninput="autoSaveNote()">${savedNote}</textarea>
+                    <div class="note-status" id="note-status">Sauvegardé automatiquement</div>
+                `;
+            }).catch((err) => {
+                console.error("Erreur chargement note :", err);
+            });
+        }
+
+        let saveTimeout;
+        function autoSaveNote() {
+            const content = document.getElementById('personal-note').value;
+            const statusEl = document.getElementById('note-status');
+            if (statusEl) statusEl.innerText = "Enregistrement en cours...";
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                try {
+                    await db.collection("notes").doc(currentUser.username).set({ content });
+                    if (statusEl) statusEl.innerText = "Sauvegardé automatiquement";
+                } catch (e) {
+                    console.error("Erreur auto-save note :", e);
+                }
+            }, 800);
+        }
+
+        // --- VUE PERSONNES BLESSÉES ---
+        function renderBlessesView(container) {
+            container.innerHTML = `
+                <h2>🚑 Personnes blessées (Ambulancier)</h2>
+                <div class="form-group">
+                    <label>Prénom (Obligatoire)</label>
+                    <input type="text" id="bless-prenom" placeholder="Prénom">
+                </div>
+                <div class="form-group">
+                    <label>Classe (Obligatoire)</label>
+                    <input type="text" id="bless-classe" placeholder="Classe">
+                </div>
+                <div class="form-group">
+                    <label>Blessure (Obligatoire)</label>
+                    <input type="text" id="bless-blessure" placeholder="Nature de la blessure">
+                </div>
+                <div class="form-group">
+                    <label>Date (Obligatoire)</label>
+                    <input type="text" id="bless-date" placeholder="Ex: 20 juillet">
+                </div>
+                <div class="form-group">
+                    <label>Traitement administré (Optionnel)</label>
+                    <input type="text" id="bless-traitement" placeholder="Ex: Glace, pansement">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="bless-parquelquun" onchange="toggleBlesserDetails()">
+                    <label for="bless-parquelquun" style="margin-bottom:0;">Est-ce que c'est quelqu'un qui l'a fait ?</label>
+                </div>
+                <div id="bless-details-container" class="hidden" style="margin-top: 1rem;">
+                    <div class="form-group">
+                        <label>C'est qui ?</label>
+                        <input type="text" id="bless-qui" placeholder="Nom de la personne">
+                    </div>
+                    <div class="form-group">
+                        <label>Qu'est-ce qu'il a fait pour le blesser ?</label>
+                        <input type="text" id="bless-action" placeholder="Description de l'action">
+                    </div>
+                </div>
+                <button type="button" onclick="addBlessé()" style="margin-top: 1rem;">+ Ajouter une personne blessée</button>
+                <div style="margin-top: 2rem;" id="blesses-list"></div>
+            `;
+            updateBlessesList();
+        }
+
+        function toggleBlesserDetails() {
+            const checked = document.getElementById('bless-parquelquun').checked;
+            const container = document.getElementById('bless-details-container');
+            if (checked) container.classList.remove('hidden');
+            else container.classList.add('hidden');
+        }
+
+        async function addBlessé() {
+            const prenom = document.getElementById('bless-prenom').value.trim();
+            const classe = document.getElementById('bless-classe').value.trim();
+            const blessure = document.getElementById('bless-blessure').value.trim();
+            const date = document.getElementById('bless-date').value.trim();
+            const traitement = document.getElementById('bless-traitement').value.trim();
+            const parQuelquun = document.getElementById('bless-parquelquun').checked;
+            const qui = parQuelquun ? document.getElementById('bless-qui').value.trim() : '';
+            const action = parQuelquun ? document.getElementById('bless-action').value.trim() : '';
+
+            if (!prenom || !classe || !blessure || !date) {
+                alert("Veuillez remplir tous les champs obligatoires.");
+                return;
+            }
+
+            try {
+                const docRef = db.collection("sharedData").doc("mainDocument");
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    let data = doc.exists ? doc.data() : { horaires: [], surveiller: [], blesses: [], equipeMembres: [] };
+                    if (!data.blesses) data.blesses = [];
+                    data.blesses.push({ prenom, classe, blessure, date, traitement, parQuelquun, qui, action, author: currentUser.username });
+                    transaction.set(docRef, data);
+                });
+                document.getElementById('bless-prenom').value = '';
+                document.getElementById('bless-classe').value = '';
+                document.getElementById('bless-blessure').value = '';
+                document.getElementById('bless-date').value = '';
+                document.getElementById('bless-traitement').value = '';
+            } catch (e) {
+                console.error("Erreur ajout blessé :", e);
+            }
+        }
+
+        function updateBlessesList() {
+            const listEl = document.getElementById('blesses-list');
+            if (!listEl) return;
+            if (!sharedData.blesses || sharedData.blesses.length === 0) {
+                listEl.innerHTML = '<p>Aucune personne enregistrée.</p>';
+                return;
+            }
+            listEl.innerHTML = sharedData.blesses.map((b, index) => `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <h4>${b.prenom} (${b.classe}) - ${b.date}</h4>
+                        <p><strong>Blessure :</strong> ${b.blessure}</p>
+                        ${b.traitement ? `<p><strong>Traitement :</strong> ${b.traitement}</p>` : ''}
+                        ${b.parQuelquun ? `<p><strong>Causé par :</strong> ${b.qui} (${b.action})</p>` : ''}
+                        <p style="font-size: 0.8rem; margin-top: 5px;">Ajouté par : ${b.author}</p>
+                    </div>
+                    <button class="danger" type="button" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteBlessé(${index})">Supprimer</button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteBlessé(index) {
+            try {
+                const docRef = db.collection("sharedData").doc("mainDocument");
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    if (doc.exists) {
+                        let data = doc.data();
+                        if (data.blesses && data.blesses[index]) {
+                            data.blesses.splice(index, 1);
+                            transaction.set(docRef, data);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Erreur suppression blessé :", e);
+            }
+        }
+
+        // --- VUE PARAMÈTRES ---
+        function renderParametresView(container) {
+            container.innerHTML = `
+                <h2>⚙️ Paramètres du compte</h2>
+                <div class="form-group">
+                    <label>Nom d'utilisateur (non modifiable)</label>
+                    <input type="text" value="${currentUser.username}" disabled style="background-color: #f1f5f9; color: var(--text-light);">
+                </div>
+
+                <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);">
+
+                <h2>Créer un compte à un ami</h2>
+                <div class="form-group">
+                    <label>Type de compte ami :</label>
+                    <select id="friend-type" onchange="toggleFriendTypeOptions()">
+                        <option value="equipe">En équipe avec moi</option>
+                        <option value="autre">Un autre jeune leader</option>
+                    </select>
+                </div>
+
+                <div id="friend-roles-container" class="form-group hidden">
+                    <label>Rôles du jeune leader (cochez un ou plusieurs)</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="friend-role-mediateur" value="mediateur" checked>
+                        <label for="friend-role-mediateur" style="margin-bottom:0;">Médiateur</label>
+                    </div>
+                    <div class="checkbox-group" style="margin-top: 0.3rem;">
+                        <input type="checkbox" id="friend-role-ambulancier" value="ambulancier">
+                        <label for="friend-role-ambulancier" style="margin-bottom:0;">Ambulancier</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Nom d'utilisateur de l'ami</label>
+                    <input type="text" id="friend-username" placeholder="Nom d'utilisateur">
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" id="friend-password" placeholder="Mot de passe">
+                </div>
+                <div class="form-group">
+                    <label>Confirmation du mot de passe</label>
+                    <input type="password" id="friend-password-confirm" placeholder="Confirmer le mot de passe">
+                </div>
+
+                <button type="button" onclick="createFriendAccount()">Créer le compte</button>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 1rem; font-style: italic;">
+                    S'il vous plaît, veuillez donner les informations de connexion à votre ami pour qu'il se connecte ensuite sur le site.
+                </p>
+            `;
+        }
+
+        function toggleFriendTypeOptions() {
+            const type = document.getElementById('friend-type').value;
+            const rolesDiv = document.getElementById('friend-roles-container');
+            if (type === 'autre') rolesDiv.classList.remove('hidden');
+            else rolesDiv.classList.add('hidden');
+        }
+
+        async function createFriendAccount() {
+            const type = document.getElementById('friend-type').value;
+            const username = document.getElementById('friend-username').value.trim();
+            const password = document.getElementById('friend-password').value.trim();
+            const confirmPwd = document.getElementById('friend-password-confirm').value.trim();
+            
+            let role = currentUser.role;
+            if (type === 'autre') {
+                role = getSelectedRoles('friend');
+            }
+
+            if (!username || !password || !confirmPwd) {
+                alert("Veuillez remplir tous les champs.");
+                return;
+            }
+
+            if (password !== confirmPwd) {
+                alert("Les mots de passe ne correspondent pas.");
+                return;
+            }
+
+            if (allUsers.some(u => u.username === username)) {
+                alert("Ce nom d'utilisateur existe déjà.");
+                return;
+            }
+
+            try {
+                const newFriend = { username, password, role };
+                await db.collection("users").doc(username).set(newFriend);
+
+                if (type === 'equipe') {
+                    const docRef = db.collection("sharedData").doc("mainDocument");
+                    await db.runTransaction(async (transaction) => {
+                        const doc = await transaction.get(docRef);
+                        let data = doc.exists ? doc.data() : { horaires: [], surveiller: [], blesses: [], equipeMembres: [] };
+                        if (!data.equipeMembres) data.equipeMembres = [];
+                        if (data.equipeMembres.length < 2 && !data.equipeMembres.includes(username)) {
+                            data.equipeMembres.push(username);
+                            transaction.set(docRef, data);
+                        }
+                    });
+                }
+
+                alert(`Salut, je suis ravi de te dire que tu peux créer un compte à ton ami !\n\nCompte de ${username} créé avec succès !`);
+                document.getElementById('friend-username').value = '';
+                document.getElementById('friend-password').value = '';
+                document.getElementById('friend-password-confirm').value = '';
+            } catch (error) {
+                console.error("Erreur création ami :", error);
+                alert("Erreur lors de la création du compte ami.");
+            }
+        }
+    </script>
+</body>
+</html>
